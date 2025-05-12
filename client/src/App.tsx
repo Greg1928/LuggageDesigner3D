@@ -47,9 +47,18 @@ function App() {
   }
 
   return (
-    <div className="h-screen w-screen bg-background text-foreground flex flex-col md:flex-row overflow-hidden">
+    <div className="h-screen w-screen bg-white text-foreground flex flex-col md:flex-row overflow-hidden">
       {/* Left panel for 3D view */}
       <div className="flex-grow relative">
+        {/* Top navigation with close button - like in reference image */}
+        <div className="absolute top-0 right-0 left-0 p-4 z-10 flex justify-end">
+          <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M14 2L2 14M2 2L14 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
+        
         <Canvas
           camera={{
             position: [0, 1, 5],
@@ -64,15 +73,13 @@ function App() {
           </Suspense>
         </Canvas>
         
-        {/* Floating instructions panel */}
+        {/* Hidden instructions panel - reduce visual clutter */}
         {showInstructions && (
-          <div className="absolute top-4 left-4 p-4 bg-background/80 backdrop-blur-sm rounded-lg shadow-lg max-w-xs">
-            <h3 className="font-semibold mb-2">Interaction Controls:</h3>
-            <ul className="text-sm">
+          <div className="absolute bottom-4 left-4 p-3 bg-white/80 backdrop-blur-sm rounded-lg shadow-md max-w-xs border border-gray-200">
+            <h3 className="font-medium text-sm mb-1">Interaction Controls:</h3>
+            <ul className="text-xs text-gray-600">
               <li>• Click and drag to rotate the suitcase</li>
               <li>• Scroll to zoom in/out</li>
-              <li>• Right click and drag to pan</li>
-              <li>• Use the panel to customize your suitcase</li>
             </ul>
           </div>
         )}

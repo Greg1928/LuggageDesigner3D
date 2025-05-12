@@ -284,18 +284,38 @@ export function SuitcaseModel() {
   }, [useFallback, handleColor]);
   
   useEffect(() => {
-    if (useFallback || !zipperMaterialRef.current) return;
+    if (useFallback || !scene) return;
     console.log("Updating zipper color to:", zipperColor);
-    zipperMaterialRef.current.color.set(zipperColor);
-    zipperMaterialRef.current.needsUpdate = true;
     
-    // Re-assign the material to all zipper parts to ensure update
+    // Create a fresh material for the zipper each time color changes
+    const newZipperMaterial = new THREE.MeshStandardMaterial({
+      name: "zipper-material",
+      color: new THREE.Color(zipperColor),
+      roughness: 0.5,
+      metalness: 0
+    });
+    
+    // Copy properties from original material to preserve textures
+    if (materials && materials["STCGE5VWEWTRJHQY"] instanceof THREE.MeshStandardMaterial) {
+      const origMat = materials["STCGE5VWEWTRJHQY"] as THREE.MeshStandardMaterial;
+      if (origMat.map) newZipperMaterial.map = origMat.map;
+      if (origMat.normalMap) newZipperMaterial.normalMap = origMat.normalMap;
+      if (origMat.roughnessMap) newZipperMaterial.roughnessMap = origMat.roughnessMap;
+      if (origMat.metalnessMap) newZipperMaterial.metalnessMap = origMat.metalnessMap;
+      if (origMat.envMap) newZipperMaterial.envMap = origMat.envMap;
+      newZipperMaterial.normalScale.copy(origMat.normalScale);
+    }
+    
+    // Update our reference and apply to mesh
+    zipperMaterialRef.current = newZipperMaterial;
+    
+    // Apply to the zipper mesh
     scene.traverse((child) => {
       if (child instanceof THREE.Mesh && child.name === "Cube228_2") {
-        child.material = zipperMaterialRef.current;
+        child.material = newZipperMaterial;
       }
     });
-  }, [useFallback, zipperColor, scene]);
+  }, [useFallback, zipperColor, scene, materials]);
   
   useEffect(() => {
     if (useFallback || !wheelMaterialRef.current) return;
