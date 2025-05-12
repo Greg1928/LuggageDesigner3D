@@ -36,7 +36,7 @@ export function Experience() {
       />
       
       {/* 3D Model - centered and slightly elevated */}
-      <group ref={groupRef} position={[0, -0.9, 0]} rotation={[0, Math.PI / 8, 0]}>
+      <group ref={groupRef} position={[0, -0.68, 0]} rotation={[0, Math.PI / 8, 0]}>
         <SuitcaseModel />
       </group>
       
@@ -48,8 +48,8 @@ export function Experience() {
         enableRotate={true}
         minPolarAngle={Math.PI / 4}  // More limited vertical rotation
         maxPolarAngle={Math.PI / 2.2}
-        minDistance={4}  // Keep minimum distance to prevent getting too close
-        maxDistance={8}  // Limit maximum distance
+        minDistance={3}  // Keep minimum distance to prevent getting too close
+        maxDistance={7}  // Limit maximum distance
         // Set initial rotation to match reference image
         target={[0, 0, 0]}
       />

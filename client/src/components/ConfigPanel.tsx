@@ -7,47 +7,59 @@ import { Button } from "@/components/ui/button";
 import { ColorPicker } from "./ColorPicker";
 import { WheelOptions } from "./WheelOptions";
 import { useConfigurator } from "@/lib/stores/useConfigurator";
-import { 
-  ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, 
-  Download, Image, Menu, Palette, RefreshCw, Share2, SlidersHorizontal, X 
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  Image,
+  Menu,
+  Palette,
+  RefreshCw,
+  Share2,
+  SlidersHorizontal,
+  X,
 } from "lucide-react";
 import { useAudio } from "@/lib/stores/useAudio";
 
-// New predefined color options similar to the image
 const COLOR_PRESETS = [
-  "#000000", // Black
-  "#FFFFFF", // White
-  "#192B4A", // Navy Blue
-  "#B22234", // Red
-  "#1E3A8A", // Royal Blue
-  "#F5F5DC", // Beige
-  "#D2B48C", // Tan
-  "#BC8F8F", // Rosewood
-  "#94A3B8", // Light Blue
-  "#AEC670", // Olive
-  "#F0E68C", // Light Yellow
+  "#000000",
+  "#FFFFFF",
+  "#192B4A",
+  "#B22234",
+  "#1E3A8A",
+  "#F5F5DC",
+  // "#D2B48C",
+  // "#BC8F8F",
+  // "#94A3B8",
+  // "#AEC670",
+  // "#F0E68C",
 ];
 
 export function ConfigPanel() {
-  const { 
-    bodyColor, setBodyColor,
-    handleColor, setHandleColor,
-    zipperColor, setZipperColor,
-    wheelColor, setWheelColor,
-    wheelStyle, setWheelStyle,
-    resetAll
+  const {
+    bodyColor,
+    setBodyColor,
+    handleColor,
+    setHandleColor,
+    zipperColor,
+    setZipperColor,
+    wheelColor,
+    setWheelColor,
+    wheelStyle,
+    setWheelStyle,
+    resetAll,
   } = useConfigurator();
-  
-  const [isExpanded, setIsExpanded] = useState(true);
-  const [selectedPart, setSelectedPart] = useState("base"); // base, wheels, handle
+
+  const [selectedPart, setSelectedPart] = useState("base");
   const { playSuccess } = useAudio();
-  
-  // Navigation state for base tab (1/10)
+
   const [baseStep, setBaseStep] = useState(1);
   const totalBaseSteps = 10;
-  
-  const handleColorSelect = (color: string) => {
-    switch(selectedPart) {
+
+  const handleColorSelect = (color) => {
+    switch (selectedPart) {
       case "base":
         setBodyColor(color);
         break;
@@ -61,176 +73,105 @@ export function ConfigPanel() {
         break;
     }
   };
-  
+
   const handleResetConfig = () => {
     resetAll();
   };
-  
+
   const handleSaveConfig = () => {
-    // In a real app, this would save the configuration
-    // For this demo, we'll just play a success sound
     playSuccess();
-    
-    // Mock saving to PDF or image (would be implemented in a real app)
     alert("Configuration saved! In a real app, this would download a PDF or image.");
   };
-  
+
   const handleShareConfig = () => {
-    // In a real app, this would generate a shareable link
-    // For this demo, we'll just play a success sound
     playSuccess();
-    
-    // Create a mock share dialog
     const shareText = `Check out my custom luggage design:\n• Body: ${bodyColor}\n• Handle: ${handleColor}\n• Zippers: ${zipperColor}\n• Wheels: ${wheelStyle} (${wheelColor})`;
-    
+
     if (navigator.share) {
-      navigator.share({
-        title: 'My Custom Luggage Design',
-        text: shareText,
-        url: window.location.href,
-      }).catch(() => {
-        alert("Sharing failed. You can copy this instead:\n\n" + shareText);
-      });
+      navigator
+        .share({
+          title: "My Custom Luggage Design",
+          text: shareText,
+          url: window.location.href,
+        })
+        .catch(() => {
+          alert("Sharing failed. You can copy this instead:\n\n" + shareText);
+        });
     } else {
       alert("Sharing not supported on this browser. You can copy this instead:\n\n" + shareText);
     }
   };
-  
+
   return (
-    <div className={`border-l border-border bg-white text-card-foreground transition-all ${isExpanded ? 'w-full md:w-96 lg:w-[420px]' : 'w-14'}`}>
-      {/* Mobile toggle button */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="md:hidden absolute top-4 right-4 z-10 bg-background/60 backdrop-blur-sm"
-        onClick={() => setIsExpanded(!isExpanded)}
-      >
-        {isExpanded ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-      </Button>
-      
-      {isExpanded ? (
-        <div className="h-full overflow-y-auto flex flex-col">
-          {/* Top header with product info */}
-          <div className="relative px-6 pt-6 pb-4">
-            {/* Close button in the top right */}
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="absolute top-4 right-4 h-8 w-8"
-              onClick={() => setIsExpanded(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-            
-            {/* Brand logo */}
-            <div className="text-red-600 font-semibold text-lg mb-2">
-              RONCATO
-            </div>
-            
-            {/* Product Name */}
-            <h2 className="text-sm font-medium">Trolley Medio</h2>
-            <p className="text-xs text-gray-500">e-lite trolley medio 72 cm (72 x 46.5 x 24cm)</p>
-            <p className="text-sm mt-1">€ 449,00</p>
-            
-            {/* Share button */}
-            <div className="absolute top-4 right-12">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                className="h-8 w-8"
-                onClick={handleShareConfig}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-              </Button>
-            </div>
-          </div>
-          
-          {/* Navigation progress with arrows */}
-          <div className="flex items-center justify-between px-6 py-4 border-t border-b border-gray-200">
-            <Button variant="ghost" size="icon">
-              <ChevronLeft className="h-5 w-5" />
-            </Button>
-            
-            <div className="text-sm font-medium">
-              Base <span className="text-gray-500">{baseStep}/{totalBaseSteps}</span>
-            </div>
-            
-            <Button variant="ghost" size="icon">
-              <ChevronRight className="h-5 w-5" />
-            </Button>
-          </div>
-          
-          {/* Tab selection */}
-          <div className="grid grid-cols-3 border-b border-gray-200">
-            <Button 
-              variant={selectedPart === "base" ? "ghost" : "ghost"} 
-              className={`py-3 rounded-none border-b-2 ${selectedPart === "base" ? 'border-black' : 'border-transparent'}`}
-              onClick={() => setSelectedPart("base")}
-            >
-              <span className="text-sm">Guscio</span>
-            </Button>
-            <Button 
-              variant={selectedPart === "wheels" ? "ghost" : "ghost"} 
-              className={`py-3 rounded-none border-b-2 ${selectedPart === "wheels" ? 'border-black' : 'border-transparent'}`}
-              onClick={() => setSelectedPart("wheels")}
-            >
-              <span className="text-sm">Ruote</span>
-            </Button>
-            <Button 
-              variant={selectedPart === "handle" ? "ghost" : "ghost"} 
-              className={`py-3 rounded-none border-b-2 ${selectedPart === "handle" ? 'border-black' : 'border-transparent'}`}
-              onClick={() => setSelectedPart("handle")}
-            >
-              <span className="text-sm">Manico</span>
-            </Button>
-          </div>
-          
-          {/* Color selection */}
-          <div className="p-6">
-            <div className="grid grid-cols-5 gap-4">
-              {COLOR_PRESETS.map((color, index) => (
-                <button
-                  key={index}
-                  className={`w-10 h-10 rounded-full border ${
-                    (selectedPart === "base" && color === bodyColor) ||
-                    (selectedPart === "wheels" && color === wheelColor) ||
-                    (selectedPart === "handle" && color === handleColor)
-                      ? "ring-2 ring-black ring-offset-2" 
-                      : "border-gray-300"
-                  }`}
-                  style={{ backgroundColor: color }}
-                  onClick={() => handleColorSelect(color)}
-                >
-                  {index === 0 && selectedPart === "base" && color === bodyColor && (
-                    <div className="w-full text-center mt-12 text-xs">Nero</div>
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-          
-          {/* Menu button at the bottom */}
-          <div className="mt-auto border-t border-gray-200 p-4 flex justify-end">
-            <Button variant="outline" className="rounded-md">
-              <span className="mr-2">Menu</span>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 8H20M4 16H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </Button>
-          </div>
-        </div>
-      ) : (
-        <div className="h-full flex flex-col items-center py-6">
+    <div className="w-full bg-white overflow-hidden">
+      <div className="flex flex-col">
+        {/* Navigation progress with arrows */}
+        <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setIsExpanded(true)}
-            className="text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setBaseStep((prev) => Math.max(1, prev - 1))}
+            disabled={baseStep === 1}
           >
-            <SlidersHorizontal className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
+
+          <div className="text-sm font-medium">
+            Base <span className="text-gray-500">{baseStep}/{totalBaseSteps}</span>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setBaseStep((prev) => Math.min(totalBaseSteps, prev + 1))}
+            disabled={baseStep === totalBaseSteps}
+          >
+            <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
-      )}
+
+        {/* Tab selection */}
+        <div className="flex justify-center gap-2 py-3">
+          {["base", "wheels", "handle"].map((part) => (
+            <Button
+              key={part}
+              variant="ghost"
+              className={`px-4 py-2 text-sm font-medium rounded-full border transition-colors duration-150 ${
+                selectedPart === part
+                  ? "bg-gray-100 border-black text-black"
+                  : "border-gray-300 text-gray-500 hover:border-black hover:text-black"
+              }`}
+              onClick={() => setSelectedPart(part)}
+            >
+              {{
+                base: "Guscio",
+                wheels: "Ruote",
+                handle: "Manico",
+              }[part]}
+            </Button>
+          ))}
+        </div>
+
+        {/* Color selection */}
+        <div className="px-4 py-2">
+          <div className="flex justify-center items-center space-x-8">
+            {COLOR_PRESETS.map((color, index) => (
+              <button
+                key={index}
+                className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
+                  (selectedPart === "base" && color === bodyColor) ||
+                  (selectedPart === "wheels" && color === wheelColor) ||
+                  (selectedPart === "handle" && color === handleColor)
+                    ? "ring-2 ring-black ring-offset-2 scale-110"
+                    : "border-gray-300 hover:scale-110"
+                }`}
+                style={{ backgroundColor: color }}
+                onClick={() => handleColorSelect(color)}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
