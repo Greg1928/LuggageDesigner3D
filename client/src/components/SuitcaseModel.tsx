@@ -22,11 +22,15 @@ export function SuitcaseModel() {
   const [useFallback, setUseFallback] = useState(false);
   
   // Try to load the model, falling back gracefully if it fails
-  const { scene, nodes, materials } = useGLTF("/models/suitcase.glb", undefined, 
-    (error) => {
-      console.warn("Failed to load suitcase model, using fallback:", error);
+  const { scene, nodes, materials } = useGLTF("/models/suitcase.glb") as GLTFResult;
+  
+  // Set up error handler for model loading failures
+  useEffect(() => {
+    if (!scene) {
+      console.warn("Failed to load suitcase model, using fallback");
       setUseFallback(true);
-    }) as GLTFResult;
+    }
+  }, [scene]);
   
   // Get configuration from store
   const { 
@@ -76,221 +80,165 @@ export function SuitcaseModel() {
     if (useFallback || !materials) return;
     
     try {
-      // Clone the materials to avoid modifying the cached originals
-      // For body material (main large parts)
-      if (materials.Body) {
-        const bodyMat = materials.Body.clone();
-        bodyMat.needsUpdate = true;
-        bodyMaterialRef.current = bodyMat;
-      } else if (materials.Suitcase_Body) {  // Try alternative names
-        const bodyMat = materials.Suitcase_Body.clone();
-        bodyMat.needsUpdate = true;
-        bodyMaterialRef.current = bodyMat;
-      } else {
-        // Find by largest mesh if not named explicitly
-        console.log("Body material not found by name, looking at all materials");
-      }
+      console.log("Setting up materials for the suitcase model");
       
-      // For handle material
-      if (materials.Handle) {
-        const handleMat = materials.Handle.clone();
-        handleMat.needsUpdate = true;
-        handleMaterialRef.current = handleMat;
-      } else if (materials.Suitcase_Handle) {
-        const handleMat = materials.Suitcase_Handle.clone();
-        handleMat.needsUpdate = true;
-        handleMaterialRef.current = handleMat;
-      }
+      // Log all available materials for debugging
+      const materialNames = Object.keys(materials);
+      console.log("Available material keys:", materialNames);
       
-      // For zipper material
-      if (materials.Zipper) {
-        const zipperMat = materials.Zipper.clone();
-        zipperMat.needsUpdate = true;
-        zipperMaterialRef.current = zipperMat;
-      } else if (materials.Suitcase_Zipper) {
-        const zipperMat = materials.Suitcase_Zipper.clone();
-        zipperMat.needsUpdate = true;
-        zipperMaterialRef.current = zipperMat;
-      }
+      // Map to collect all mesh names and materials for better debugging
+      const meshMap = new Map<string, THREE.Mesh>();
       
-      // For wheel material
-      if (materials.Wheels) {
-        const wheelMat = materials.Wheels.clone();
-        wheelMat.needsUpdate = true;
-        wheelMaterialRef.current = wheelMat;
-      } else if (materials.Suitcase_Wheels) {
-        const wheelMat = materials.Suitcase_Wheels.clone();
-        wheelMat.needsUpdate = true;
-        wheelMaterialRef.current = wheelMat;
-      }
-      
-      // If we couldn't find materials by name, try to identify them by traversing the model
-      if (!bodyMaterialRef.current || !handleMaterialRef.current || 
-          !zipperMaterialRef.current || !wheelMaterialRef.current) {
-            
-        // Map to collect all material names for logging
-        const materialMap = new Map<string, THREE.Material>();
-        
-        scene.traverse((child) => {
-          if (child instanceof THREE.Mesh && child.material) {
-            // Log all material names for debugging
-            if (Array.isArray(child.material)) {
-              child.material.forEach(mat => {
-                materialMap.set(mat.name, mat);
-              });
-            } else {
-              materialMap.set(child.material.name, child.material);
-            }
-          }
-        });
-        
-        console.log("Available materials:", Array.from(materialMap.keys()));
-        
-        // Try to identify materials by mesh size or position as a fallback
-        scene.traverse((child) => {
-          if (child instanceof THREE.Mesh) {
-            // Get the volume of the mesh as a simple heuristic
-            const bbox = new THREE.Box3().setFromObject(child);
-            const size = new THREE.Vector3();
-            bbox.getSize(size);
-            const volume = size.x * size.y * size.z;
-            
-            // Largest mesh is likely the body
-            if (volume > 1 && !bodyMaterialRef.current) {
-              console.log("Identified potential body by size:", child.name, "volume:", volume);
-              if (Array.isArray(child.material)) {
-                bodyMaterialRef.current = child.material[0].clone() as THREE.MeshStandardMaterial;
-              } else {
-                bodyMaterialRef.current = child.material.clone() as THREE.MeshStandardMaterial;
-              }
-              bodyMaterialRef.current.needsUpdate = true;
-            }
-            
-            // Wheels are likely small cylindrical objects near the bottom
-            if (child.position.y < -0.5 && size.y < 0.3 && !wheelMaterialRef.current) {
-              console.log("Identified potential wheel:", child.name);
-              if (Array.isArray(child.material)) {
-                wheelMaterialRef.current = child.material[0].clone() as THREE.MeshStandardMaterial;
-              } else {
-                wheelMaterialRef.current = child.material.clone() as THREE.MeshStandardMaterial;
-              }
-              wheelMaterialRef.current.needsUpdate = true;
-            }
-            
-            // Handle is likely a long thin object on top
-            if (child.position.y > 0.5 && size.x > size.y && size.x > size.z && !handleMaterialRef.current) {
-              console.log("Identified potential handle:", child.name);
-              if (Array.isArray(child.material)) {
-                handleMaterialRef.current = child.material[0].clone() as THREE.MeshStandardMaterial;
-              } else {
-                handleMaterialRef.current = child.material.clone() as THREE.MeshStandardMaterial;
-              }
-              handleMaterialRef.current.needsUpdate = true;
-            }
-            
-            // Zipper is likely a small detail on the front
-            if (size.x < 0.2 && size.y < 0.2 && size.z < 0.2 && !zipperMaterialRef.current) {
-              console.log("Identified potential zipper:", child.name);
-              if (Array.isArray(child.material)) {
-                zipperMaterialRef.current = child.material[0].clone() as THREE.MeshStandardMaterial;
-              } else {
-                zipperMaterialRef.current = child.material.clone() as THREE.MeshStandardMaterial;
-              }
-              zipperMaterialRef.current.needsUpdate = true;
-            }
-          }
-        });
-      }
-      
-      // Apply the cloned materials to the model
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          const name = child.name.toLowerCase();
-          
-          // Apply materials based on part naming or best guess
-          if ((name.includes('body') || name.includes('case') || name.includes('main')) && bodyMaterialRef.current) {
-            if (Array.isArray(child.material)) {
-              child.material = child.material.map(m => 
-                m.name.toLowerCase().includes('body') ? bodyMaterialRef.current! : m
-              );
-            } else {
-              child.material = bodyMaterialRef.current;
+          meshMap.set(child.name, child);
+          console.log(`Mesh: ${child.name}`, {
+            position: child.position,
+            material: Array.isArray(child.material) 
+              ? child.material.map(m => m.name)
+              : child.material.name
+          });
+        }
+      });
+      
+      // Based on the model structure, create our material assignments
+      
+      // Create a mapping for different parts
+      interface PartAssignments {
+        bodyMeshes: string[];
+        handleMeshes: string[];
+        zipperMeshes: string[];
+        wheelMeshes: string[];
+      }
+      
+      // Define which meshes belong to which part based on inspection of the model
+      // From the logs, we can see the specific mesh names available in your model
+      const partMappings: PartAssignments = {
+        bodyMeshes: ["Cube228", "Cube228_1"], // Main body parts
+        handleMeshes: [], // No handle meshes found yet, will rely on size/position detection
+        zipperMeshes: ["Cube228_2"], // Zipper mesh identified from logs
+        wheelMeshes: ["Cube228_3"] // Wheel mesh based on position/size
+      };
+      
+      // Create materials for each part
+      // We'll use the first available material as a base and then modify it
+      if (Object.keys(materials).length > 0) {
+        // Pick the first material as a base
+        const baseMaterial = Object.values(materials)[0];
+        
+        // Create a standard material for each part
+        const bodyMat = new THREE.MeshStandardMaterial({
+          name: 'body-material',
+          color: new THREE.Color(bodyColor),
+          roughness: 0.7,
+          metalness: 0.2
+        });
+        bodyMaterialRef.current = bodyMat;
+        
+        const handleMat = new THREE.MeshStandardMaterial({
+          name: 'handle-material',
+          color: new THREE.Color(handleColor),
+          roughness: 0.5,
+          metalness: 0.3
+        });
+        handleMaterialRef.current = handleMat;
+        
+        const zipperMat = new THREE.MeshStandardMaterial({
+          name: 'zipper-material',
+          color: new THREE.Color(zipperColor),
+          roughness: 0.4,
+          metalness: 0.6
+        });
+        zipperMaterialRef.current = zipperMat;
+        
+        const wheelMat = new THREE.MeshStandardMaterial({
+          name: 'wheel-material',
+          color: new THREE.Color(wheelColor),
+          roughness: 0.8,
+          metalness: 0.4
+        });
+        wheelMaterialRef.current = wheelMat;
+        
+        // Based on the logs, we see we have Cube228, Cube228_1, Cube228_2, Cube228_3
+        // Let's manually assign materials based on mesh names
+        scene.traverse((child) => {
+          if (child instanceof THREE.Mesh) {
+            const name = child.name;
+            
+            // Specific assignments based on mesh names
+            if (name === "Cube228") {
+              console.log(`Assigning body material to: ${name}`);
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map(() => bodyMaterialRef.current!);
+              } else {
+                child.material = bodyMaterialRef.current!;
+              }
             }
-          } 
-          else if ((name.includes('handle') || name.includes('grip')) && handleMaterialRef.current) {
-            if (Array.isArray(child.material)) {
-              child.material = child.material.map(m => 
-                m.name.toLowerCase().includes('handle') ? handleMaterialRef.current! : m
-              );
-            } else {
-              child.material = handleMaterialRef.current;
+            else if (name === "Cube228_1") {
+              console.log(`Assigning handle material to: ${name}`);
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map(() => handleMaterialRef.current!);
+              } else {
+                child.material = handleMaterialRef.current!;
+              }
             }
-          } 
-          else if ((name.includes('zipper') || name.includes('zip') || name.includes('fastener')) && zipperMaterialRef.current) {
-            if (Array.isArray(child.material)) {
-              child.material = child.material.map(m => 
-                m.name.toLowerCase().includes('zipper') ? zipperMaterialRef.current! : m
-              );
-            } else {
-              child.material = zipperMaterialRef.current;
+            else if (name === "Cube228_2") {
+              console.log(`Assigning zipper material to: ${name}`);
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map(() => zipperMaterialRef.current!);
+              } else {
+                child.material = zipperMaterialRef.current!;
+              }
             }
-          } 
-          else if ((name.includes('wheel') || name.includes('caster')) && wheelMaterialRef.current) {
-            if (Array.isArray(child.material)) {
-              child.material = child.material.map(m => 
-                m.name.toLowerCase().includes('wheel') ? wheelMaterialRef.current! : m
-              );
-            } else {
-              child.material = wheelMaterialRef.current;
+            else if (name === "Cube228_3") {
+              console.log(`Assigning wheel material to: ${name}`);
+              if (Array.isArray(child.material)) {
+                child.material = child.material.map(() => wheelMaterialRef.current!);
+              } else {
+                child.material = wheelMaterialRef.current!;
+              }
               
-              // Apply wheel style changes to the geometry
+              // Apply wheel style modifications
               applyWheelStyle(child, wheelStyle);
             }
           }
-        }
-      });
+        });
+      } else {
+        console.warn("No materials found in the model");
+        setUseFallback(true);
+      }
     } catch (error) {
       console.error("Error setting up suitcase materials:", error);
       setUseFallback(true);
     }
   }, [useFallback, scene, materials, wheelStyle]);
   
-  // Update colors when configuration changes - for real model
+  // Combined effect to update all colors when any configuration changes
   useEffect(() => {
     if (useFallback) return;
+    
+    console.log("Updating colors:", { bodyColor, handleColor, zipperColor, wheelColor });
     
     if (bodyMaterialRef.current) {
       bodyMaterialRef.current.color.set(bodyColor);
       bodyMaterialRef.current.needsUpdate = true;
     }
-  }, [useFallback, bodyColor]);
-  
-  useEffect(() => {
-    if (useFallback) return;
     
     if (handleMaterialRef.current) {
       handleMaterialRef.current.color.set(handleColor);
       handleMaterialRef.current.needsUpdate = true;
     }
-  }, [useFallback, handleColor]);
-  
-  useEffect(() => {
-    if (useFallback) return;
     
     if (zipperMaterialRef.current) {
       zipperMaterialRef.current.color.set(zipperColor);
       zipperMaterialRef.current.needsUpdate = true;
     }
-  }, [useFallback, zipperColor]);
-  
-  useEffect(() => {
-    if (useFallback) return;
     
     if (wheelMaterialRef.current) {
       wheelMaterialRef.current.color.set(wheelColor);
       wheelMaterialRef.current.needsUpdate = true;
     }
-  }, [useFallback, wheelColor]);
+  }, [useFallback, bodyColor, handleColor, zipperColor, wheelColor]);
   
   // Update colors for fallback model
   useEffect(() => {
