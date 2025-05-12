@@ -209,6 +209,14 @@ export function SuitcaseModel() {
       wheelMaterialRef.current = wheelMaterial;
       
       // Assign materials based on mesh name or position/size
+      // List all meshes in the model to identify what we're working with
+      console.log("All meshes in the model:");
+      scene.traverse((node) => {
+        if (node instanceof THREE.Mesh) {
+          console.log(`- Mesh: "${node.name}" (Material: ${node.material instanceof THREE.Material ? node.material.name : 'unknown'})`);
+        }
+      });
+      
       scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
           // Body is usually the main large part (Cube228)
@@ -223,8 +231,10 @@ export function SuitcaseModel() {
           }
           // Zipper part (Cube228_2)
           else if (child.name === "Cube228_2") {
-            console.log("Assigning zipper material to:", child.name);
+            console.log("Assigning zipper material to:", child.name, "with color", zipperColor);
+            console.log("Zipper material before:", child.material);
             child.material = zipperMaterial;
+            console.log("Zipper material after:", child.material, "color:", (child.material as THREE.MeshStandardMaterial).color);
           }
           // Wheels (Cube228_3)
           else if (child.name === "Cube228_3") {
@@ -275,9 +285,17 @@ export function SuitcaseModel() {
   
   useEffect(() => {
     if (useFallback || !zipperMaterialRef.current) return;
+    console.log("Updating zipper color to:", zipperColor);
     zipperMaterialRef.current.color.set(zipperColor);
     zipperMaterialRef.current.needsUpdate = true;
-  }, [useFallback, zipperColor]);
+    
+    // Re-assign the material to all zipper parts to ensure update
+    scene.traverse((child) => {
+      if (child instanceof THREE.Mesh && child.name === "Cube228_2") {
+        child.material = zipperMaterialRef.current;
+      }
+    });
+  }, [useFallback, zipperColor, scene]);
   
   useEffect(() => {
     if (useFallback || !wheelMaterialRef.current) return;
