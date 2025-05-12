@@ -1,9 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { hexToRgb, rgbToHex } from "@/lib/helpers";
-import { Check, ChevronDown } from "lucide-react";
+import { hexToRgb, rgbToHex, isLightColor } from "@/lib/helpers";
+import { Check, CheckCircle, ChevronDown, PaintBucket } from "lucide-react";
 
 interface ColorPickerProps {
   color: string;
@@ -15,7 +15,7 @@ export function ColorPicker({ color, onChange, presetColors = [] }: ColorPickerP
   const [open, setOpen] = useState(false);
   const [tempColor, setTempColor] = useState(color);
   const [inputColor, setInputColor] = useState(color);
-  const [isCustomColorActive, setIsCustomColorActive] = useState(false);
+  const [activeTab, setActiveTab] = useState<'presets' | 'custom'>('presets');
   
   // RGB sliders state
   const rgb = hexToRgb(color);
@@ -47,21 +47,18 @@ export function ColorPicker({ color, onChange, presetColors = [] }: ColorPickerP
     const value = parseInt(e.target.value);
     setRed(value);
     updateRgb(value, green, blue);
-    setIsCustomColorActive(true);
   };
   
   const handleGreenChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setGreen(value);
     updateRgb(red, value, blue);
-    setIsCustomColorActive(true);
   };
   
   const handleBlueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseInt(e.target.value);
     setBlue(value);
     updateRgb(red, green, value);
-    setIsCustomColorActive(true);
   };
   
   // Handle direct hex input
@@ -79,8 +76,6 @@ export function ColorPicker({ color, onChange, presetColors = [] }: ColorPickerP
         setGreen(rgb.g);
         setBlue(rgb.b);
       }
-      
-      setIsCustomColorActive(true);
     }
   };
   
@@ -95,7 +90,8 @@ export function ColorPicker({ color, onChange, presetColors = [] }: ColorPickerP
       setBlue(rgb.b);
     }
     
-    setIsCustomColorActive(false);
+    // Auto-apply when clicking a preset
+    onChange(presetColor);
   };
   
   const handleApply = () => {
@@ -109,101 +105,139 @@ export function ColorPicker({ color, onChange, presetColors = [] }: ColorPickerP
         <Button
           variant="outline"
           className={cn(
-            "w-full justify-between",
-            open && "ring-2 ring-ring ring-offset-2"
+            "w-full justify-between group transition-all",
+            open && "ring-2 ring-primary ring-offset-1"
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div
-              className="h-4 w-4 rounded-full border border-border"
+              className="h-6 w-6 rounded-full border border-border shadow-sm transition-transform group-hover:scale-110"
               style={{ backgroundColor: color }}
-            />
-            <span>{color}</span>
+            >
+              <div className="w-full h-full rounded-full flex items-center justify-center">
+                {isLightColor(color) ? 
+                  <PaintBucket className="h-3 w-3 text-gray-600 opacity-0 group-hover:opacity-60" /> : 
+                  <PaintBucket className="h-3 w-3 text-white opacity-0 group-hover:opacity-60" />
+                }
+              </div>
+            </div>
+            <span className="font-medium text-sm">{color}</span>
           </div>
-          <ChevronDown className="h-4 w-4 opacity-50" />
+          <ChevronDown className="h-4 w-4 opacity-50 group-hover:opacity-100" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-64">
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <h4 className="font-medium">Presets</h4>
-            <div className="grid grid-cols-5 gap-2">
+      <PopoverContent className="w-80 p-0 overflow-hidden rounded-lg shadow-lg border-border">
+        {/* Color preview at the top */}
+        <div 
+          className="w-full h-16 flex items-end justify-end p-2"
+          style={{ backgroundColor: tempColor }}
+        >
+          <span className={`text-xs font-mono px-2 py-1 rounded bg-background/80 backdrop-blur-sm ${isLightColor(tempColor) ? 'text-gray-800' : 'text-white'}`}>
+            {tempColor}
+          </span>
+        </div>
+        
+        {/* Tabs for presets/custom */}
+        <div className="flex border-b border-border">
+          <button
+            className={`flex-1 py-2 text-sm font-medium ${activeTab === 'presets' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
+            onClick={() => setActiveTab('presets')}
+          >
+            Color Presets
+          </button>
+          <button
+            className={`flex-1 py-2 text-sm font-medium ${activeTab === 'custom' ? 'bg-muted text-primary' : 'text-muted-foreground'}`}
+            onClick={() => setActiveTab('custom')}
+          >
+            Custom Color
+          </button>
+        </div>
+        
+        <div className="p-4">
+          {activeTab === 'presets' ? (
+            <div className="grid grid-cols-7 gap-2">
               {presetColors.map((presetColor) => (
                 <button
                   key={presetColor}
                   className={cn(
-                    "h-8 w-8 rounded-full border border-border flex items-center justify-center",
-                    tempColor === presetColor && "ring-2 ring-ring ring-offset-2"
+                    "h-10 w-10 rounded-full border border-border flex items-center justify-center transition-all hover:scale-110",
+                    tempColor === presetColor && "ring-2 ring-primary ring-offset-2"
                   )}
                   style={{ backgroundColor: presetColor }}
                   onClick={() => handlePresetColorClick(presetColor)}
                 >
                   {tempColor === presetColor && (
-                    <Check className="h-4 w-4 text-white" />
+                    <CheckCircle className={`h-5 w-5 ${isLightColor(presetColor) ? 'text-gray-800' : 'text-white'}`} />
                   )}
                 </button>
               ))}
             </div>
-          </div>
-          
-          <div className="space-y-2">
-            <h4 className="font-medium">Custom</h4>
-            <div>
-              <div className="mb-2">
-                <div className="h-10 rounded-md border border-border" style={{ backgroundColor: tempColor }} />
-              </div>
-              
-              <div className="space-y-2">
-                <div className="grid grid-cols-2 items-center gap-2">
-                  <label className="text-xs">Hex</label>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 items-center gap-4">
+                  <label className="text-sm font-medium">Hex Value</label>
                   <input
                     type="text"
                     value={inputColor}
                     onChange={handleInputChange}
-                    className="h-8 w-full rounded-md border border-border px-2 text-xs"
+                    className="h-9 w-full rounded-md border border-border px-3 text-sm focus:ring-1 focus:ring-primary"
                   />
                 </div>
                 
-                <div className="grid gap-2">
-                  <label className="text-xs">R: {red}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="255"
-                    value={red}
-                    onChange={handleRedChange}
-                    className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-red-200"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <label className="text-xs">G: {green}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="255"
-                    value={green}
-                    onChange={handleGreenChange}
-                    className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-green-200"
-                  />
-                </div>
-                
-                <div className="grid gap-2">
-                  <label className="text-xs">B: {blue}</label>
-                  <input
-                    type="range"
-                    min="0"
-                    max="255"
-                    value={blue}
-                    onChange={handleBlueChange}
-                    className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-blue-200"
-                  />
+                <div className="space-y-3 pt-2">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Red</label>
+                      <span className="text-xs text-muted-foreground">{red}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="255"
+                      value={red}
+                      onChange={handleRedChange}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gradient-to-r from-red-200 to-red-500"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Green</label>
+                      <span className="text-xs text-muted-foreground">{green}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="255"
+                      value={green}
+                      onChange={handleGreenChange}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gradient-to-r from-green-200 to-green-500"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">Blue</label>
+                      <span className="text-xs text-muted-foreground">{blue}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="255"
+                      value={blue}
+                      onChange={handleBlueChange}
+                      className="w-full h-2 rounded-lg appearance-none cursor-pointer bg-gradient-to-r from-blue-200 to-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
+              
+              <Button onClick={handleApply} className="w-full">
+                Apply Color
+              </Button>
             </div>
-          </div>
-          
-          <Button onClick={handleApply} className="w-full">Apply</Button>
+          )}
         </div>
       </PopoverContent>
     </Popover>

@@ -7,12 +7,7 @@ import { SuitcaseModel } from "./SuitcaseModel";
 export function Experience() {
   const groupRef = useRef<THREE.Group>(null);
   
-  // Add a gentle rotation to the suitcase when it's not being controlled
-  useFrame((state, delta) => {
-    if (groupRef.current && !state.mouse.buttons) {
-      groupRef.current.rotation.y += delta * 0.15;
-    }
-  });
+  // Removed automatic rotation as requested
   
   return (
     <>
