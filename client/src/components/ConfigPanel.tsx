@@ -144,7 +144,7 @@ export function ConfigPanel() {
                 onClick={handleResetConfig}
               >
                 <TimerReset className="h-4 w-4 mr-2" />
-                Reset
+                TimerReset
               </Button>
               <Button 
                 variant="outline" 
